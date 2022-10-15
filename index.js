@@ -73,7 +73,7 @@ async function CounterMain (request) {
 }
 
 const UniHeader = {
-    "Content-Type": "plain/text;charset=UTF-8",
+    "Content-Type": "text/plain;charset=UTF-8",
     "Access-Control-Allow-Origin": "*",
     "Cache-Control": "no-store"
 };
