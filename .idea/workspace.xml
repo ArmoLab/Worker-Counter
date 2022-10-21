@@ -32,7 +32,7 @@
   &quot;keyToString&quot;: {
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/home/koto/Documents/GitHub/CounterWorkerKV&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/koto/Documents/GitHub/Auto-Proxy/index.js&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
@@ -56,7 +56,8 @@
       <workItem from="1665805248286" duration="3866000" />
       <workItem from="1665809401050" duration="653000" />
       <workItem from="1665907160541" duration="7204000" />
-      <workItem from="1666354427556" duration="1778000" />
+      <workItem from="1666354427556" duration="4439000" />
+      <workItem from="1666359298231" duration="65000" />
     </task>
     <servers />
   </component>

@@ -5,6 +5,13 @@
 
 CounterSpace = CounterSpace || {};
 
+const SVGTemplate = `<image xmlns="http://www.w3.org/2000/svg" x="%imgX" y="0" width="%generalWidth" height="%generalHeight" xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="%imgBase64"/>`;
+const SVGHeader =
+    `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="%SVGWidth" height="%generalHeight">`+
+    `<title>Moe Count by kobe-koto</title>`+
+    `<g>%SVGBody</g>`+
+    `</svg>`;
+
 addEventListener("fetch", event => {
     event.respondWith(CounterMain(event.request));
 })
@@ -13,7 +20,13 @@ addEventListener("fetch", event => {
 async function CounterMain (request) {
     let url = new URL(request.url);
     let NameSpace = (function (url) {
-        let TempArray = url.host.split(".");
+        let TempArray =
+            url.host
+                .replace(/.com./gi, ".com-")
+                .replace(/.org./gi, ".org-")
+                .replace(/.edu./gi, ".edu-")
+                .replace(/.gov./gi, ".gov-")
+                .split(".");
         return TempArray[TempArray.length-2] + "." + TempArray[TempArray.length-1];
         /*
          * only support the TOP LEVEL DOMAIN
@@ -41,12 +54,8 @@ async function CounterMain (request) {
         JSON.namespace = NameSpace;
         return JSON;
     })(request.headers)
-/*    let CountNow = await CounterSpace.get(NameSpace + "_Hits")
-    !CountNow ? CountNow = 1 : CountNow++;
-    CounterSpace.put(NameSpace + "_Hits", CountNow);*/
 
-
-    let SVG = (function (){
+    let TextOnlySVG = (function (){
         if (GetQueryString(url, "img") || url.search.match(/(^\?img$|^\?img&)/i)) {
             let VisitorText = GetQueryString(url, "VisitorText"),
                 HitText = GetQueryString(url, "HitText"),
@@ -78,26 +87,59 @@ async function CounterMain (request) {
         }
     })()
 
+    let MoeCounterSVG = await (async function (theme, ResponseValue){
+        if (GetQueryString(url, "type") === "MoeCounter") {
+            CounterJSON.hit = CounterJSON.hit.toString().padStart(8, "0").split("")
+            CounterJSON.visitor = CounterJSON.visitor.toString().padStart(8, "0").split("")
+
+            let MoeCounterRes =
+                await fetch("https://github.com/kobe-koto/CounterWorkerKV/raw/main/MoeCounterRes/" + theme + ".json")
+                    .then(res => res.json())
+            MoeCounterRes.ArrayBase64 = MoeCounterRes.ArrayBase64 || [];
+            MoeCounterRes.height = MoeCounterRes.height || 0;
+            MoeCounterRes.width = MoeCounterRes.width || 0;
+
+            let SVGPart = "";
+            for (
+                let time = 0;
+                time < CounterJSON[ResponseValue].length;
+                time++
+            ) {
+                SVGPart +=
+                    SVGTemplate
+                        .replace(/%generalWidth/g, MoeCounterRes.width)
+                        .replace(/%generalHeight/g, MoeCounterRes.height)
+                        .replace(/%generalHeight/g, MoeCounterRes.height)
+                        .replace(/%imgX/g, (time * MoeCounterRes.width).toString())
+                        .replace(/%imgBase64/g, MoeCounterRes.ArrayBase64[CounterJSON[ResponseValue]])
+            }
+            return SVGHeader
+                .replace(/%SVGWidth/g, CounterJSON[ResponseValue].length * MoeCounterRes.width)
+                .replace(/%generalHeight/g, MoeCounterRes.height)
+                .replace(/%SVGBody/g, SVGPart)
+        } else {
+            return null;
+        }
+    })(GetQueryString(url, "theme"), GetQueryString(url, "value"))
 
     // noinspection JSCheckFunctionSignatures
     return new Response(
         (function (){
-            if (url.search === "?visitor") {
+            if (GetQueryString(url, "type") === "visitor") {
                 return CounterJSON.visitor
-            } else if (url.search === "?hit") {
+            } else if (GetQueryString(url, "type") === "hit") {
                 return CounterJSON.hit
-            } else if (url.search.slice(0,5) === "?text") {
-                return decodeURI(atob(
-                    url.search
-                        .replace(/\?text=/,"")
-                        .replace(/%3D/gi,"=")
-                ))
+            } else if (GetQueryString(url, "type") === "text") {
+                return decodeURI(atob(GetQueryString(url, "text")))
                     .replace(/@CounterByKoto_Visitors/gi, CounterJSON.visitor.toString())
                     .replace(/@CounterByKoto_Hits/gi, CounterJSON.hit.toString())
                     .replace(/@CounterByKoto_NameSpace/gi, CounterJSON.namespace)
-            } else if (url.search.slice(0,4) === "?img") {
+            } else if (GetQueryString(url, "type") === "img") {
                 UniHeader["Content-Type"] = "image/svg+xml"
-                return SVG;
+                return TextOnlySVG;
+            } else if (GetQueryString(url, "type") === "MoeCounter") {
+                UniHeader["Content-Type"] = "image/svg+xml"
+                return MoeCounterSVG
             } else {
                 UniHeader["Content-Type"] = "application/json;charset=UTF-8"
                 return JSON.stringify(CounterJSON)
@@ -120,39 +162,5 @@ function GetQueryString (url, name) {
     let reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
     let result = url.search.slice(1).match(reg);
 
-    return (!!result) ? decodeURI(result[2]).replace(/\+/gi, " ") : null;
+    return result ? decodeURI(result[2]).replace(/\+/gi, " ") : null;
 }
-
-
-/*
- * MoeCounter-like draft
- * ..but i really dont know if the Workers has file-reader API (and i dont want to test for it. LOL),
- * so these code will not appear in the production env.
- */
-
-/*
- * x is 45x
- */
-
-/*
-const MoeCounterRaw = "https://raw.githubusercontent.com/journey-ad/Moe-counter/master/assets/theme/" + "rule34" + "/";
-let reader = new FileReader();
-
-fetch(MoeCounterRaw + 0 + ".gif")
-    .then(res=>res.blob())
-    .then(res=>{
-        Promise.resolve()
-            .then(() => FileReaderPromise(res))
-            .then((DataURL) => console.log(DataURL.target.result));
-    })
-
-function FileReaderPromise (file) {
-  return new Promise((resolve, reject) => {
-    var reader = new FileReader();
-    reader.onload = resolve;
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
- */
