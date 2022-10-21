@@ -125,10 +125,16 @@ function GetQueryString (url, name) {
 
 
 /*
- * draft
+ * MoeCounter-like draft
+ * ..but i really dont know if the Workers has file-reader API (and i dont want to test for it. LOL),
+ * so these code will not appear in the production env.
  */
-/*
 
+/*
+ * x is 45x
+ */
+
+/*
 const MoeCounterRaw = "https://raw.githubusercontent.com/journey-ad/Moe-counter/master/assets/theme/" + "rule34" + "/";
 let reader = new FileReader();
 
