@@ -111,7 +111,7 @@ async function CounterMain (request) {
                         .replace(/%generalHeight/g, MoeCounterRes.height)
                         .replace(/%generalHeight/g, MoeCounterRes.height)
                         .replace(/%imgX/g, (time * MoeCounterRes.width).toString())
-                        .replace(/%imgBase64/g, MoeCounterRes.ArrayBase64[CounterJSON[ResponseValue]])
+                        .replace(/%imgBase64/g, MoeCounterRes.ArrayBase64[CounterJSON[ResponseValue][time]])
             }
             return SVGHeader
                 .replace(/%SVGWidth/g, CounterJSON[ResponseValue].length * MoeCounterRes.width)
