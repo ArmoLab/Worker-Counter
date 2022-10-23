@@ -26,6 +26,7 @@ async function CounterMain (request) {
                 .replace(/.org./gi, ".org-")
                 .replace(/.edu./gi, ".edu-")
                 .replace(/.gov./gi, ".gov-")
+                .replace(/.net./gi, ".net-")
                 .split(".");
         return TempArray[TempArray.length-2] + "." + TempArray[TempArray.length-1];
         /*
@@ -87,44 +88,22 @@ async function CounterMain (request) {
         }
     })()
 
-    let MoeCounterSVG = await (async function (theme, ResponseValue){
-        if (GetQueryString(url, "type") === "MoeCounter") {
-            CounterJSON.hit = CounterJSON.hit.toString().padStart(8, "0").split("")
-            CounterJSON.visitor = CounterJSON.visitor.toString().padStart(8, "0").split("")
+    let MoeCounterSVG = {};
 
-            let MoeCounterRes =
-                await fetch("https://github.com/kobe-koto/CounterWorkerKV/raw/main/MoeCounterRes/" + theme + ".json")
-                    .then(res => res.json())
-            MoeCounterRes.ArrayBase64 = MoeCounterRes.ArrayBase64 || [];
-            MoeCounterRes.height = MoeCounterRes.height || 0;
-            MoeCounterRes.width = MoeCounterRes.width || 0;
+    MoeCounterSVG.hit =
+        (GetQueryString(url, "value") === "hit" || GetQueryString(url, "value") === "JSON")
+            ? await GenSVG (url, CounterJSON, GetQueryString(url, "theme"), "hit")
+            : null;
 
-            let SVGPart = "";
-            for (
-                let time = 0;
-                time < CounterJSON[ResponseValue].length;
-                time++
-            ) {
-                SVGPart +=
-                    SVGTemplate
-                        .replace(/%generalWidth/g, MoeCounterRes.width)
-                        .replace(/%generalHeight/g, MoeCounterRes.height)
-                        .replace(/%generalHeight/g, MoeCounterRes.height)
-                        .replace(/%imgX/g, (time * MoeCounterRes.width).toString())
-                        .replace(/%imgBase64/g, MoeCounterRes.ArrayBase64[CounterJSON[ResponseValue][time]])
-            }
-            return SVGHeader
-                .replace(/%SVGWidth/g, CounterJSON[ResponseValue].length * MoeCounterRes.width)
-                .replace(/%generalHeight/g, MoeCounterRes.height)
-                .replace(/%SVGBody/g, SVGPart)
-        } else {
-            return null;
-        }
-    })(GetQueryString(url, "theme"), GetQueryString(url, "value"))
+    MoeCounterSVG.visitor =
+        (GetQueryString(url, "value") === "visitor" || GetQueryString(url, "value") === "JSON")
+            ? await GenSVG (url, CounterJSON, GetQueryString(url, "theme"), "visitor")
+            : null;
 
     // noinspection JSCheckFunctionSignatures
     return new Response(
         (function (){
+            console.warn(GetQueryString(url, "value"))
             if (GetQueryString(url, "type") === "visitor") {
                 return CounterJSON.visitor
             } else if (GetQueryString(url, "type") === "hit") {
@@ -137,9 +116,14 @@ async function CounterMain (request) {
             } else if (GetQueryString(url, "type") === "img") {
                 UniHeader["Content-Type"] = "image/svg+xml"
                 return TextOnlySVG;
-            } else if (GetQueryString(url, "type") === "MoeCounter") {
+            } else if (GetQueryString(url, "type") === "MoeCounter" && GetQueryString(url, "value") !== "JSON") {
                 UniHeader["Content-Type"] = "image/svg+xml"
-                return MoeCounterSVG
+                return MoeCounterSVG[GetQueryString(url, "value")]
+            } else if (GetQueryString(url, "type") === "MoeCounter" && GetQueryString(url, "value") === "JSON") {
+                UniHeader["Content-Type"] = "application/json;charset=UTF-8"
+                MoeCounterSVG.hit = "data:image/svg+xml;base64," + btoa(MoeCounterSVG.hit)
+                MoeCounterSVG.visitor = "data:image/svg+xml;base64," + btoa(MoeCounterSVG.visitor)
+                return JSON.stringify(MoeCounterSVG)
             } else {
                 UniHeader["Content-Type"] = "application/json;charset=UTF-8"
                 return JSON.stringify(CounterJSON)
@@ -156,11 +140,44 @@ const UniHeader = {
     "Cache-Control": "max-age=0, no-cache, no-store, must-revalidate"
 };
 
-
-
 function GetQueryString (url, name) {
     let reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
     let result = url.search.slice(1).match(reg);
 
     return result ? decodeURI(result[2]).replace(/\+/gi, " ") : null;
+}
+
+async function GenSVG (url, CounterJSON, theme, value){
+    if (GetQueryString(url, "type") === "MoeCounter") {
+        CounterJSON.hit = CounterJSON.hit.toString().padStart(8, "0").split("")
+        CounterJSON.visitor = CounterJSON.visitor.toString().padStart(8, "0").split("")
+
+        let MoeCounterRes =
+            await fetch("https://github.com/kobe-koto/CounterWorkerKV/raw/main/MoeCounterRes/" + theme + ".json")
+                .then(res => res.json())
+        MoeCounterRes.ArrayBase64 = MoeCounterRes.ArrayBase64 || [];
+        MoeCounterRes.height = MoeCounterRes.height || 0;
+        MoeCounterRes.width = MoeCounterRes.width || 0;
+
+        let SVGPart = "";
+        for (
+            let time = 0;
+            time < CounterJSON[value].length;
+            time++
+        ) {
+            SVGPart +=
+                SVGTemplate
+                    .replace(/%generalWidth/g, MoeCounterRes.width)
+                    .replace(/%generalHeight/g, MoeCounterRes.height)
+                    .replace(/%generalHeight/g, MoeCounterRes.height)
+                    .replace(/%imgX/g, (time * MoeCounterRes.width).toString())
+                    .replace(/%imgBase64/g, MoeCounterRes.ArrayBase64[CounterJSON[value][time]])
+        }
+        return SVGHeader
+            .replace(/%SVGWidth/g, (CounterJSON[value].length * MoeCounterRes.width).toString())
+            .replace(/%generalHeight/g, MoeCounterRes.height)
+            .replace(/%SVGBody/g, SVGPart)
+    } else {
+        return null;
+    }
 }
