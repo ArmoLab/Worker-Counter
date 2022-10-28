@@ -19,9 +19,10 @@ addEventListener("fetch", event => {
 
 async function CounterMain (request) {
     let url = new URL(request.url);
-    let NameSpace = (function (url) {
+
+    let NameSpace = (function (host) {
         let TempArray =
-            url.host
+            host
                 .replace(/.com./gi, ".com-")
                 .replace(/.org./gi, ".org-")
                 .replace(/.edu./gi, ".edu-")
@@ -29,11 +30,8 @@ async function CounterMain (request) {
                 .replace(/.net./gi, ".net-")
                 .split(".");
         return TempArray[TempArray.length-2] + "." + TempArray[TempArray.length-1];
-        /*
-         * only support the TOP LEVEL DOMAIN
-         * like example.com, example.org is support. but a domain like example.com.cn is not supported.)
-         */
-    })(url)
+    })(url.host)
+
     let CounterJSON = await (async function (headers) {
         let Hits = await CounterSpace.get(NameSpace + "_Hits")
         !Hits ? Hits = 1 : Hits++;
@@ -103,7 +101,6 @@ async function CounterMain (request) {
     // noinspection JSCheckFunctionSignatures
     return new Response(
         (function (){
-            console.warn(GetQueryString(url, "value"))
             if (GetQueryString(url, "type") === "visitor") {
                 return CounterJSON.visitor
             } else if (GetQueryString(url, "type") === "hit") {
@@ -152,12 +149,7 @@ async function GenSVG (url, CounterJSON, theme, value){
         CounterJSON.hit = CounterJSON.hit.toString().padStart(8, "0").split("")
         CounterJSON.visitor = CounterJSON.visitor.toString().padStart(8, "0").split("")
 
-        let MoeCounterRes =
-            await fetch("https://github.com/kobe-koto/CounterWorkerKV/raw/main/MoeCounterRes/" + theme + ".json")
-                .then(res => res.json())
-        MoeCounterRes.ArrayBase64 = MoeCounterRes.ArrayBase64 || [];
-        MoeCounterRes.height = MoeCounterRes.height || 0;
-        MoeCounterRes.width = MoeCounterRes.width || 0;
+        let MoeCounterRes = await ReadMoeCounterData (theme);
 
         let SVGPart = "";
         for (
@@ -180,4 +172,27 @@ async function GenSVG (url, CounterJSON, theme, value){
     } else {
         return null;
     }
+}
+
+async function ReadMoeCounterData (theme) {
+    let MoeCounterRes = await CounterSpace.get("_theme_" + theme);
+    if (MoeCounterRes){
+        MoeCounterRes = JSON.parse(MoeCounterRes);
+    } else {
+        MoeCounterRes =
+            await fetch("https://github.com/kobe-koto/CounterWorkerKV/raw/main/MoeCounterRes/" + theme + ".json")
+                .then(res => res.json())
+                .catch(()=>{})
+        if (typeof MoeCounterRes === "object") {
+            CounterSpace.put("_theme_" + theme, JSON.stringify(MoeCounterRes));
+        } else {
+            MoeCounterRes = {};
+        }
+    }
+
+    MoeCounterRes.ArrayBase64 = MoeCounterRes.ArrayBase64 || [];
+    MoeCounterRes.height = MoeCounterRes.height || 0;
+    MoeCounterRes.width = MoeCounterRes.width || 0;
+
+    return MoeCounterRes
 }
