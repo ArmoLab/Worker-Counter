@@ -7,7 +7,7 @@ CounterSpace = CounterSpace || {};
 
 const SVGTemplate = `<image xmlns="http://www.w3.org/2000/svg" x="%imgX" y="0" width="%generalWidth" height="%generalHeight" xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="%imgBase64"/>`;
 const SVGHeader =
-    `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="%SVGWidth" height="%generalHeight">`+
+    `<svg xmlns="http://www.w3.org/2000/svg" width="%SVGWidth" height="%generalHeight">`+
     `<title>Moe Count by kobe-koto</title>`+
     `<g>%SVGBody</g>`+
     `</svg>`;
