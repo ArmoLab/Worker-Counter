@@ -146,8 +146,7 @@ function GetQueryString (url, name) {
 
 async function GenSVG (url, CounterJSON, theme, value){
     if (GetQueryString(url, "type") === "MoeCounter") {
-        CounterJSON.hit = CounterJSON.hit.toString().padStart(8, "0").split("")
-        CounterJSON.visitor = CounterJSON.visitor.toString().padStart(8, "0").split("")
+        CounterJSON[value] = CounterJSON[value].toString().padStart(8, "0").split("")
 
         let MoeCounterRes = await ReadMoeCounterData (theme);
 
