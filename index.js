@@ -141,7 +141,7 @@ function GetQueryString (url, name) {
     let reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
     let result = url.search.slice(1).match(reg);
 
-    return result ? decodeURI(result[2]).replace(/\+/gi, " ") : null;
+    return result ? decodeURI(result[2]).replace(/\+/gi, " ").replace(/%3D/gi, "=") : null;
 }
 
 async function GenSVG (url, CounterJSON, theme, value){
